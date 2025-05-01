@@ -1,11 +1,7 @@
-const express = require('express');
-const puppeteer = require('puppeteer');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 const path = require('path');
-const app = express();
-const port = 3000;
-
-app.use(express.json());
 
 const surnames = [
   { ua: 'ТКАЧЕНКО', en: 'TKACHENKO' },
@@ -76,34 +72,44 @@ function generateRandomField(field) {
   }
 }
 
-app.get('/generate-passport', async (req, res) => {
-  let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
-
-  if (!surname || !surnameLat) {
-    const randomSurname = generateRandomField('surname');
-    surname = surname || randomSurname.ua;
-    surnameLat = surnameLat || randomSurname.en;
-  }
-
-  if (!name || !nameLat) {
-    const randomName = generateRandomField('name');
-    name = name || randomName.ua;
-    nameLat = nameLat || randomName.en;
-  }
-  patronymic = patronymic || generateRandomField('patronymic');
-  sex = sex || generateRandomField('sex');
-  birthDate = birthDate || generateRandomField('birthDate');
-  recordNo = recordNo || generateRandomField('recordNo');
-  expiryDate = expiryDate || generateRandomField('expiryDate');
-  documentNo = documentNo || generateRandomField('documentNo');
-  photo = photo || `data:image/jpeg;base64,${generateRandomField('photo')}`;
-
+// Экспортируем функцию для Vercel
+module.exports = async (req, res) => {
   try {
+    let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
+
+    if (!surname || !surnameLat) {
+      const randomSurname = generateRandomField('surname');
+      surname = surname || randomSurname.ua;
+      surnameLat = surnameLat || randomSurname.en;
+    }
+
+    if (!name || !nameLat) {
+      const randomName = generateRandomField('name');
+      name = name || randomName.ua;
+      nameLat = nameLat || randomName.en;
+    }
+    patronymic = patronymic || generateRandomField('patronymic');
+    sex = sex || generateRandomField('sex');
+    birthDate = birthDate || generateRandomField('birthDate');
+    recordNo = recordNo || generateRandomField('recordNo');
+    expiryDate = expiryDate || generateRandomField('expiryDate');
+    documentNo = documentNo || generateRandomField('documentNo');
+    photo = photo || `data:image/jpeg;base64,${generateRandomField('photo')}`;
+
     const backgroundImagePath = path.join(__dirname, 'pass2.jpg');
     const backgroundImageBase64 = fs.readFileSync(backgroundImagePath, { encoding: 'base64' });
     const backgroundImageDataUrl = `data:image/jpeg;base64,${backgroundImageBase64}`;
 
-    const browser = await puppeteer.launch();
+    // Получаем путь к Chromium из chrome-aws-lambda
+    const executablePath = await chromium.executablePath;
+
+    const browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: chromium.headless,
+    });
+
     const page = await browser.newPage();
 
     await page.setViewport({ width: 800, height: 500 });
@@ -157,13 +163,9 @@ app.get('/generate-passport', async (req, res) => {
     await browser.close();
 
     res.setHeader('Content-Type', 'image/png');
-    res.send(imageBuffer);
+    res.status(200).send(imageBuffer);
   } catch (error) {
     console.error('Ошибка при генерации паспорта:', error);
     res.status(500).send('Ошибка сервера.');
   }
-});
-
-app.listen(port, () => {
-  console.log(`Сервер запущен на порту ${port}`);
-});
+};
