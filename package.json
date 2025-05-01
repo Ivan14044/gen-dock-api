@@ -2,9 +2,9 @@
   "name": "passport-generator-api",
   "version": "1.0.0",
   "description": "API для генерации паспорта с использованием Puppeteer на Vercel",
-  "main": "server.cjs",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.cjs"
+    "start": "node server.js"
   },
   "dependencies": {
     "@sparticuz/chromium": "^133.0.0",
