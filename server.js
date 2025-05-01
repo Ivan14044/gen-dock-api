@@ -1,7 +1,11 @@
-const chromium = require('chrome-aws-lambda');
+const express = require('express');
 const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const fs = require('fs');
 const path = require('path');
+const app = express();
+
+app.use(express.json());
 
 const surnames = [
   { ua: 'ТКАЧЕНКО', en: 'TKACHENKO' },
@@ -72,46 +76,41 @@ function generateRandomField(field) {
   }
 }
 
-// Экспортируем функцию для Vercel
-module.exports = async (req, res) => {
+app.get('/generate-passport', async (req, res) => {
+  let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
+
+  if (!surname || !surnameLat) {
+    const randomSurname = generateRandomField('surname');
+    surname = surname || randomSurname.ua;
+    surnameLat = surnameLat || randomSurname.en;
+  }
+
+  if (!name || !nameLat) {
+    const randomName = generateRandomField('name');
+    name = name || randomName.ua;
+    nameLat = nameLat || randomName.en;
+  }
+  patronymic = patronymic || generateRandomField('patronymic');
+  sex = sex || generateRandomField('sex');
+  birthDate = birthDate || generateRandomField('birthDate');
+  recordNo = recordNo || generateRandomField('recordNo');
+  expiryDate = expiryDate || generateRandomField('expiryDate');
+  documentNo = documentNo || generateRandomField('documentNo');
+  photo = photo || `data:image/jpeg;base64,${generateRandomField('photo')}`;
+
   try {
-    let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
-
-    if (!surname || !surnameLat) {
-      const randomSurname = generateRandomField('surname');
-      surname = surname || randomSurname.ua;
-      surnameLat = surnameLat || randomSurname.en;
-    }
-
-    if (!name || !nameLat) {
-      const randomName = generateRandomField('name');
-      name = name || randomName.ua;
-      nameLat = nameLat || randomName.en;
-    }
-    patronymic = patronymic || generateRandomField('patronymic');
-    sex = sex || generateRandomField('sex');
-    birthDate = birthDate || generateRandomField('birthDate');
-    recordNo = recordNo || generateRandomField('recordNo');
-    expiryDate = expiryDate || generateRandomField('expiryDate');
-    documentNo = documentNo || generateRandomField('documentNo');
-    photo = photo || `data:image/jpeg;base64,${generateRandomField('photo')}`;
-
     const backgroundImagePath = path.join(__dirname, 'pass2.jpg');
     const backgroundImageBase64 = fs.readFileSync(backgroundImagePath, { encoding: 'base64' });
     const backgroundImageDataUrl = `data:image/jpeg;base64,${backgroundImageBase64}`;
 
-    // Получаем путь к Chromium из chrome-aws-lambda
-    const executablePath = await chromium.executablePath;
-
+    // Конфигурация для Vercel
     const browser = await puppeteer.launch({
       args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath,
+      executablePath: process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath(),
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-
     await page.setViewport({ width: 800, height: 500 });
 
     await page.setContent(`
@@ -159,13 +158,15 @@ module.exports = async (req, res) => {
     `);
 
     const imageBuffer = await page.screenshot();
-
     await browser.close();
 
     res.setHeader('Content-Type', 'image/png');
-    res.status(200).send(imageBuffer);
+    res.send(imageBuffer);
   } catch (error) {
     console.error('Ошибка при генерации паспорта:', error);
     res.status(500).send('Ошибка сервера.');
   }
-};
+});
+
+// Vercel ожидает экспорт обработчика
+module.exports = app;
