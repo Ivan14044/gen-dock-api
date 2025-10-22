@@ -7,28 +7,111 @@ const app = express();
 
 app.use(express.json());
 
+// Кеширование фонового изображения
+let backgroundImageDataUrl = null;
+
+function getBackgroundImage() {
+  if (!backgroundImageDataUrl) {
+    const backgroundImagePath = path.join(__dirname, 'pass2.jpg');
+    const backgroundImageBase64 = fs.readFileSync(backgroundImagePath, { encoding: 'base64' });
+    backgroundImageDataUrl = `data:image/jpeg;base64,${backgroundImageBase64}`;
+  }
+  return backgroundImageDataUrl;
+}
+
 const surnames = [
   { ua: 'ТКАЧЕНКО', en: 'TKACHENKO' },
   { ua: 'ПЕТРЕНКО', en: 'PETRENKO' },
   { ua: 'КОВАЛЕНКО', en: 'KOVALENKO' },
   { ua: 'БОНДАРЕНКО', en: 'BONDARENKO' },
   { ua: 'МЕЛЬНИК', en: 'MELNYK' },
+  { ua: 'ШЕВЧЕНКО', en: 'SHEVCHENKO' },
+  { ua: 'БОЙКО', en: 'BOIKO' },
+  { ua: 'КОВАЛЬ', en: 'KOVAL' },
+  { ua: 'ПОЛІЩУК', en: 'POLISHCHUK' },
+  { ua: 'ІВАНЕНКО', en: 'IVANENKO' },
+  { ua: 'ГРИЦЕНКО', en: 'HRYTSENKO' },
+  { ua: 'ПАВЛЕНКО', en: 'PAVLENKO' },
+  { ua: 'САВЧЕНКО', en: 'SAVCHENKO' },
+  { ua: 'ЛИТВИНЕНКО', en: 'LYTVYNENKO' },
+  { ua: 'РОМАНЕНКО', en: 'ROMANENKO' },
+  { ua: 'СЕМЕНКО', en: 'SEMENKO' },
+  { ua: 'КРАВЧЕНКО', en: 'KRAVCHENKO' },
+  { ua: 'КЛИМЕНКО', en: 'KLYMENKO' },
+  { ua: 'МАРЧЕНКО', en: 'MARCHENKO' },
+  { ua: 'СИДОРЕНКО', en: 'SYDORENKO' },
 ];
 
-const names = [
+const femaleNames = [
   { ua: "МАР'ЯНА", en: 'MARIANA' },
   { ua: 'ОЛЕНА', en: 'OLENA' },
   { ua: 'ІРИНА', en: 'IRYNA' },
   { ua: 'ТЕТЯНА', en: 'TETIANA' },
   { ua: 'НАТАЛІЯ', en: 'NATALIIA' },
+  { ua: 'КАТЕРИНА', en: 'KATERYNA' },
+  { ua: 'АНАСТАСІЯ', en: 'ANASTASIIA' },
+  { ua: 'ВІКТОР��Я', en: 'VIKTORIIA' },
+  { ua: 'ЮЛІЯ', en: 'YULIIA' },
+  { ua: 'ДАРИНА', en: 'DARYNA' },
+  { ua: 'СОФІЯ', en: 'SOFIIA' },
+  { ua: 'АННА', en: 'ANNA' },
+  { ua: 'МАРІЯ', en: 'MARIIA' },
+  { ua: 'ОКСАНА', en: 'OKSANA' },
+  { ua: 'ЛЮДМИЛА', en: 'LIUDMYLA' },
 ];
 
-const patronymics = [
+const maleNames = [
+  { ua: 'ОЛЕКСАНДР', en: 'OLEKSANDR' },
+  { ua: 'АНДРІЙ', en: 'ANDRII' },
+  { ua: 'ІВАН', en: 'IVAN' },
+  { ua: 'ДМИТРО', en: 'DMYTRO' },
+  { ua: 'МИХАЙЛО', en: 'MYKHAILO' },
+  { ua: 'ВОЛОДИМИР', en: 'VOLODYMYR' },
+  { ua: 'СЕРГІЙ', en: 'SERHII' },
+  { ua: 'ВІТАЛІЙ', en: 'VITALII' },
+  { ua: 'ЄВГЕН', en: 'YEVHEN' },
+  { ua: 'МАКСИМ', en: 'MAKSYM' },
+  { ua: 'АРТЕМ', en: 'ARTEM' },
+  { ua: 'ПЕТРО', en: 'PETRO' },
+  { ua: 'ТАРАС', en: 'TARAS' },
+  { ua: 'БОГДАН', en: 'BOHDAN' },
+  { ua: 'РОСТИСЛАВ', en: 'ROSTYSLAV' },
+];
+
+const femalePatronymics = [
   'ІВАНІВНА',
   'ПЕТРІВНА',
   'ОЛЕКСАНДРІВНА',
   'МИХАЙЛІВНА',
   'АНДРІЇВНА',
+  'СЕРГІЇВНА',
+  'ВОЛОДИМИРІВНА',
+  'ВІКТОРІВНА',
+  'ДМИТРІВНА',
+  'ВАСИЛІВНА',
+  'МИКОЛАЇВНА',
+  'ЮРІЇВНА',
+  'ТАРАСІВНА',
+  'БОГДАНІВНА',
+  'РОМАНІВНА',
+];
+
+const malePatronymics = [
+  'ІВАНОВИЧ',
+  'ПЕТРОВИЧ',
+  'ОЛЕКСАНДРОВИЧ',
+  'МИХАЙЛОВИЧ',
+  'АНДРІЙОВИЧ',
+  'СЕРГІЙОВИЧ',
+  'ВОЛОДИМИРОВИЧ',
+  'ВІКТОРОВИЧ',
+  'ДМИТРОВИЧ',
+  'ВАСИЛЬОВИЧ',
+  'МИКОЛАЙОВИЧ',
+  'ЮРІЙОВИЧ',
+  'ТАРАСОВИЧ',
+  'БОГДАНОВИЧ',
+  'РОМАНОВИЧ',
 ];
 
 const passportImages = [
@@ -58,16 +141,28 @@ function generateRandomNumber(length) {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
 }
 
-function generateRandomField(field) {
+function generateRandomField(field, isFemale = null) {
   switch (field) {
     case 'name':
-      return names[Math.floor(Math.random() * names.length)];
+      if (isFemale === null) {
+        // Если пол не указан, выбираем случайно
+        isFemale = Math.random() > 0.5;
+      }
+      const namesList = isFemale ? femaleNames : maleNames;
+      return namesList[Math.floor(Math.random() * namesList.length)];
     case 'surname':
       return surnames[Math.floor(Math.random() * surnames.length)];
     case 'patronymic':
-      return patronymics[Math.floor(Math.random() * patronymics.length)];
+      if (isFemale === null) {
+        isFemale = Math.random() > 0.5;
+      }
+      const patronymicsList = isFemale ? femalePatronymics : malePatronymics;
+      return patronymicsList[Math.floor(Math.random() * patronymicsList.length)];
     case 'sex':
-      return Math.random() > 0.5 ? 'Ж/F' : 'Ч/M';
+      if (isFemale === null) {
+        isFemale = Math.random() > 0.5;
+      }
+      return isFemale ? 'Ж/F' : 'Ч/M';
     case 'birthDate':
       return generateRandomDate(new Date(1970, 0, 1), new Date(2000, 11, 31));
     case 'recordNo':
@@ -91,6 +186,14 @@ function generateRandomField(field) {
 app.get('/generate-passport', async (req, res) => {
   let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
 
+  // Определяем пол для согласованности данных
+  let isFemale = null;
+  if (sex) {
+    isFemale = sex.startsWith('Ж') || sex.startsWith('F');
+  } else {
+    isFemale = Math.random() > 0.5;
+  }
+
   if (!surname || !surnameLat) {
     const randomSurname = generateRandomField('surname');
     surname = surname || randomSurname.ua;
@@ -98,12 +201,13 @@ app.get('/generate-passport', async (req, res) => {
   }
 
   if (!name || !nameLat) {
-    const randomName = generateRandomField('name');
+    const randomName = generateRandomField('name', isFemale);
     name = name || randomName.ua;
     nameLat = nameLat || randomName.en;
   }
-  patronymic = patronymic || generateRandomField('patronymic');
-  sex = sex || generateRandomField('sex');
+  
+  patronymic = patronymic || generateRandomField('patronymic', isFemale);
+  sex = sex || generateRandomField('sex', isFemale);
   birthDate = birthDate || generateRandomField('birthDate');
   recordNo = recordNo || generateRandomField('recordNo');
   expiryDate = expiryDate || generateRandomField('expiryDate');
@@ -111,9 +215,8 @@ app.get('/generate-passport', async (req, res) => {
   photo = photo || `data:image/jpeg;base64,${generateRandomField('photo')}`;
 
   try {
-    const backgroundImagePath = path.join(__dirname, 'pass2.jpg');
-    const backgroundImageBase64 = fs.readFileSync(backgroundImagePath, { encoding: 'base64' });
-    const backgroundImageDataUrl = `data:image/jpeg;base64,${backgroundImageBase64}`;
+    // Используем кешированное фоновое изображение
+    const backgroundImageDataUrl = getBackgroundImage();
 
     // Конфигурация для Vercel
     const browser = await puppeteer.launch({
