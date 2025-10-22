@@ -34,6 +34,18 @@ const patronymics = [
 const passportImages = [
   path.join(__dirname, 'face1.jpg'),
   path.join(__dirname, 'face2.jpg'),
+  path.join(__dirname, 'face3.jpg'),
+  path.join(__dirname, 'face4.jpg'),
+  path.join(__dirname, 'face5.jpg'),
+  path.join(__dirname, 'face6.jpg'),
+  path.join(__dirname, 'face7.jpg'),
+  path.join(__dirname, 'face8.jpg'),
+  path.join(__dirname, 'face9.jpg'),
+  path.join(__dirname, 'face10.jpg'),
+  path.join(__dirname, 'face11.jpg'),
+  path.join(__dirname, 'face12.jpg'),
+  path.join(__dirname, 'face13.jpg'),
+  path.join(__dirname, 'face14.jpg'),
 ];
 
 function generateRandomDate(start, end) {
