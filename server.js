@@ -42,7 +42,7 @@ const surnames = [
   { ua: 'СИДОРЕНКО', en: 'SYDORENKO' },
 ];
 
-const femaleNames = [
+const names = [
   { ua: "МАР'ЯНА", en: 'MARIANA' },
   { ua: 'ОЛЕНА', en: 'OLENA' },
   { ua: 'ІРИНА', en: 'IRYNA' },
@@ -50,7 +50,7 @@ const femaleNames = [
   { ua: 'НАТАЛІЯ', en: 'NATALIIA' },
   { ua: 'КАТЕРИНА', en: 'KATERYNA' },
   { ua: 'АНАСТАСІЯ', en: 'ANASTASIIA' },
-  { ua: 'ВІКТОР��Я', en: 'VIKTORIIA' },
+  { ua: 'ВІКТОРІЯ', en: 'VIKTORIIA' },
   { ua: 'ЮЛІЯ', en: 'YULIIA' },
   { ua: 'ДАРИНА', en: 'DARYNA' },
   { ua: 'СОФІЯ', en: 'SOFIIA' },
@@ -60,25 +60,7 @@ const femaleNames = [
   { ua: 'ЛЮДМИЛА', en: 'LIUDMYLA' },
 ];
 
-const maleNames = [
-  { ua: 'ОЛЕКСАНДР', en: 'OLEKSANDR' },
-  { ua: 'АНДРІЙ', en: 'ANDRII' },
-  { ua: 'ІВАН', en: 'IVAN' },
-  { ua: 'ДМИТРО', en: 'DMYTRO' },
-  { ua: 'МИХАЙЛО', en: 'MYKHAILO' },
-  { ua: 'ВОЛОДИМИР', en: 'VOLODYMYR' },
-  { ua: 'СЕРГІЙ', en: 'SERHII' },
-  { ua: 'ВІТАЛІЙ', en: 'VITALII' },
-  { ua: 'ЄВГЕН', en: 'YEVHEN' },
-  { ua: 'МАКСИМ', en: 'MAKSYM' },
-  { ua: 'АРТЕМ', en: 'ARTEM' },
-  { ua: 'ПЕТРО', en: 'PETRO' },
-  { ua: 'ТАРАС', en: 'TARAS' },
-  { ua: 'БОГДАН', en: 'BOHDAN' },
-  { ua: 'РОСТИСЛАВ', en: 'ROSTYSLAV' },
-];
-
-const femalePatronymics = [
+const patronymics = [
   'ІВАНІВНА',
   'ПЕТРІВНА',
   'ОЛЕКСАНДРІВНА',
@@ -94,24 +76,6 @@ const femalePatronymics = [
   'ТАРАСІВНА',
   'БОГДАНІВНА',
   'РОМАНІВНА',
-];
-
-const malePatronymics = [
-  'ІВАНОВИЧ',
-  'ПЕТРОВИЧ',
-  'ОЛЕКСАНДРОВИЧ',
-  'МИХАЙЛОВИЧ',
-  'АНДРІЙОВИЧ',
-  'СЕРГІЙОВИЧ',
-  'ВОЛОДИМИРОВИЧ',
-  'ВІКТОРОВИЧ',
-  'ДМИТРОВИЧ',
-  'ВАСИЛЬОВИЧ',
-  'МИКОЛАЙОВИЧ',
-  'ЮРІЙОВИЧ',
-  'ТАРАСОВИЧ',
-  'БОГДАНОВИЧ',
-  'РОМАНОВИЧ',
 ];
 
 const passportImages = [
@@ -141,28 +105,16 @@ function generateRandomNumber(length) {
   return Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
 }
 
-function generateRandomField(field, isFemale = null) {
+function generateRandomField(field) {
   switch (field) {
     case 'name':
-      if (isFemale === null) {
-        // Если пол не указан, выбираем случайно
-        isFemale = Math.random() > 0.5;
-      }
-      const namesList = isFemale ? femaleNames : maleNames;
-      return namesList[Math.floor(Math.random() * namesList.length)];
+      return names[Math.floor(Math.random() * names.length)];
     case 'surname':
       return surnames[Math.floor(Math.random() * surnames.length)];
     case 'patronymic':
-      if (isFemale === null) {
-        isFemale = Math.random() > 0.5;
-      }
-      const patronymicsList = isFemale ? femalePatronymics : malePatronymics;
-      return patronymicsList[Math.floor(Math.random() * patronymicsList.length)];
+      return patronymics[Math.floor(Math.random() * patronymics.length)];
     case 'sex':
-      if (isFemale === null) {
-        isFemale = Math.random() > 0.5;
-      }
-      return isFemale ? 'Ж/F' : 'Ч/M';
+      return 'Ж/F';
     case 'birthDate':
       return generateRandomDate(new Date(1970, 0, 1), new Date(2000, 11, 31));
     case 'recordNo':
@@ -186,14 +138,6 @@ function generateRandomField(field, isFemale = null) {
 app.get('/generate-passport', async (req, res) => {
   let { surname, name, patronymic, sex, birthDate, recordNo, expiryDate, documentNo, surnameLat, nameLat, photo } = req.query;
 
-  // Определяем пол для согласованности данных
-  let isFemale = null;
-  if (sex) {
-    isFemale = sex.startsWith('Ж') || sex.startsWith('F');
-  } else {
-    isFemale = Math.random() > 0.5;
-  }
-
   if (!surname || !surnameLat) {
     const randomSurname = generateRandomField('surname');
     surname = surname || randomSurname.ua;
@@ -201,13 +145,13 @@ app.get('/generate-passport', async (req, res) => {
   }
 
   if (!name || !nameLat) {
-    const randomName = generateRandomField('name', isFemale);
+    const randomName = generateRandomField('name');
     name = name || randomName.ua;
     nameLat = nameLat || randomName.en;
   }
   
-  patronymic = patronymic || generateRandomField('patronymic', isFemale);
-  sex = sex || generateRandomField('sex', isFemale);
+  patronymic = patronymic || generateRandomField('patronymic');
+  sex = sex || generateRandomField('sex');
   birthDate = birthDate || generateRandomField('birthDate');
   recordNo = recordNo || generateRandomField('recordNo');
   expiryDate = expiryDate || generateRandomField('expiryDate');
